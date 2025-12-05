@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import { api } from '@/lib/api';
-import { Wand2 } from 'lucide-react';
+import { Wand2, Play, Pause, Download } from 'lucide-react';
 
 export default function StoryCreator({ projectId, onStoryCreated }: { projectId: string; onStoryCreated?: () => void }) {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [story, setStory] = useState<any>(null);
+  const [playingAudio, setPlayingAudio] = useState<{[key: string]: boolean}>({});
+  const [audioPlayer, setAudioPlayer] = useState<{[key: string]: HTMLAudioElement}>({});
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +26,35 @@ export default function StoryCreator({ projectId, onStoryCreated }: { projectId:
       alert('Failed to generate story');
     }
     setLoading(false);
+  };
+
+  const handlePlayPause = (sceneId: string, audioFilename: string) => {
+    if (playingAudio[sceneId]) {
+      // Pause
+      const player = audioPlayer[sceneId];
+      if (player) {
+        player.pause();
+      }
+      setPlayingAudio({ ...playingAudio, [sceneId]: false });
+    } else {
+      // Play
+      const audio = new Audio(`http://localhost:5000/api/audio/${audioFilename}`);
+      audio.onended = () => {
+        setPlayingAudio({ ...playingAudio, [sceneId]: false });
+      };
+      audio.play();
+      setAudioPlayer({ ...audioPlayer, [sceneId]: audio });
+      setPlayingAudio({ ...playingAudio, [sceneId]: true });
+    }
+  };
+
+  const handleDownload = (audioFilename: string, sceneTitle: string) => {
+    const link = document.createElement('a');
+    link.href = `http://localhost:5000/api/audio/${audioFilename}`;
+    link.download = `${sceneTitle}.wav`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -49,15 +80,50 @@ export default function StoryCreator({ projectId, onStoryCreated }: { projectId:
       </form>
 
       {story && (
-        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-          <h3 className="font-bold mb-2">{story.title}</h3>
-          <div className="space-y-2">
-            {story.scenes?.map((scene: any, idx: number) => (
-              <div key={idx} className="text-sm text-gray-700">
-                <strong>Scene {scene.sequence}:</strong> {scene.title}
-              </div>
-            ))}
+        <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+          <h3 className="font-bold mb-3 text-green-900">✅ Story Generated - Narration & Audio Auto-Created!</h3>
+          <div className="space-y-3 text-sm">
+            {story.scenes?.map((scene: any, idx: number) => {
+              const audioFilename = scene.audio_filename || `narration_${scene.id}.wav`;
+              return (
+                <div key={idx} className="bg-white p-3 rounded border border-green-200">
+                  <div className="font-bold text-green-700">Scene {scene.sequence}: {scene.title}</div>
+                  <div className="text-gray-700 mt-2">
+                    <strong>Narration:</strong> {scene.narration}
+                  </div>
+                  <div className="mt-3 flex items-center gap-2">
+                    <button
+                      onClick={() => handlePlayPause(scene.id, audioFilename)}
+                      className={`flex items-center gap-1 px-3 py-1 rounded text-sm transition ${
+                        playingAudio[scene.id]
+                          ? 'bg-red-500 text-white hover:bg-red-600'
+                          : 'bg-blue-500 text-white hover:bg-blue-600'
+                      }`}
+                    >
+                      {playingAudio[scene.id] ? (
+                        <>
+                          <Pause size={14} /> Pause
+                        </>
+                      ) : (
+                        <>
+                          <Play size={14} /> Play Audio
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleDownload(audioFilename, scene.title)}
+                      className="flex items-center gap-1 px-3 py-1 rounded text-sm bg-green-600 text-white hover:bg-green-700 transition"
+                    >
+                      <Download size={14} /> Download
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
+          <p className="text-xs text-gray-600 mt-3">
+            💡 All narration and audio have been automatically generated. Go to the "Edit" tab to customize or view the scenes.
+          </p>
         </div>
       )}
     </div>

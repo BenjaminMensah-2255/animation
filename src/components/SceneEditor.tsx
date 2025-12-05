@@ -12,6 +12,7 @@ export default function SceneEditor({ scene, projectId, onSceneDeleted }: { scen
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    setSceneData(scene);
     loadPreview();
   }, [scene]);
 
@@ -73,7 +74,10 @@ export default function SceneEditor({ scene, projectId, onSceneDeleted }: { scen
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Scene Narration</label>
+            <label className="block text-sm font-medium mb-2">
+              Scene Narration 
+              <span className="text-xs text-blue-600 ml-2">(Auto-generated - Edit if needed)</span>
+            </label>
             <textarea
               value={sceneData.narration || ''}
               onChange={(e) => setSceneData({ ...sceneData, narration: e.target.value })}

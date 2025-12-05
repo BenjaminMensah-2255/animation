@@ -52,7 +52,7 @@ def get_project(project_id):
     
     # Get associated scenes
     scenes = query_db(
-        'SELECT id, sequence, background_type FROM scenes WHERE project_id = ? ORDER BY sequence',
+        'SELECT id, sequence, background_type, title, narration FROM scenes WHERE project_id = ? ORDER BY sequence',
         (project_id,)
     )
     
@@ -64,7 +64,7 @@ def get_project(project_id):
         'updated_at': updated_at,
         'status': status,
         'stories': [{'id': s[0], 'title': s[1]} for s in stories],
-        'scenes': [{'id': s[0], 'sequence': s[1], 'background': s[2]} for s in scenes]
+        'scenes': [{'id': s[0], 'sequence': s[1], 'background': s[2], 'title': s[3], 'narration': s[4]} for s in scenes]
     }), 200
 
 @project_bp.route('', methods=['GET'])
@@ -122,13 +122,14 @@ def create_scene(project_id):
         'characters': data.get('characters', []),
         'narration': data.get('narration', ''),
         'duration': data.get('duration', 3.0),
-        'transitions': json.dumps(data.get('transitions', {}))
+        'transitions': json.dumps(data.get('transitions', {})),
+        'title': data.get('title', '')
     }
     
     execute_db(
-        '''INSERT INTO scenes (id, project_id, sequence, background_type, characters, narration, duration, transitions, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-        (scene_id, project_id, data.get('sequence', 1), scene['background_type'], 
+        '''INSERT INTO scenes (id, project_id, sequence, title, background_type, characters, narration, duration, transitions, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        (scene_id, project_id, data.get('sequence', 1), scene['title'], scene['background_type'], 
          json.dumps(scene['characters']), scene['narration'], scene['duration'],
          scene['transitions'], datetime.now().isoformat())
     )

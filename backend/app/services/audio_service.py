@@ -2,6 +2,7 @@ import pyttsx3
 import os
 import uuid
 from pathlib import Path
+import wave
 
 class AudioService:
     """Generate audio and handle TTS"""
@@ -10,6 +11,41 @@ class AudioService:
         self.engine = pyttsx3.init()
         self.engine.setProperty('rate', 150)  # Slower speech for clarity
         self.engine.setProperty('volume', 0.9)
+    
+    @staticmethod
+    def generate_audio(text: str, scene_id: str = None) -> str:
+        """Generate audio from text and return filename"""
+        engine = pyttsx3.init()
+        engine.setProperty('rate', 150)
+        engine.setProperty('volume', 0.9)
+        
+        filename = f"narration_{scene_id if scene_id else uuid.uuid4()}.wav"
+        
+        filepath = os.path.join(os.getcwd(), 'storage', 'audio', filename)
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        
+        try:
+            engine.save_to_file(text, filepath)
+            engine.runAndWait()
+            return filename
+        except Exception as e:
+            print(f"Error generating audio: {e}")
+            raise
+    
+    @staticmethod
+    def get_audio_duration(filename: str) -> float:
+        """Get duration of WAV audio file"""
+        try:
+            filepath = os.path.join(os.getcwd(), 'storage', 'audio', filename)
+            with wave.open(filepath, 'rb') as wav_file:
+                frames = wav_file.getnframes()
+                rate = wav_file.getframerate()
+                duration = frames / rate
+                return duration
+        except Exception as e:
+            print(f"Error getting audio duration: {e}")
+            # Fallback: estimate based on text length if available
+            return 4.0
     
     @staticmethod
     def generate_narration(text: str, filename: str = None) -> dict:

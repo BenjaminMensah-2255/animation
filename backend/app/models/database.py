@@ -50,6 +50,7 @@ def init_db():
             project_id TEXT NOT NULL,
             story_id TEXT,
             sequence INTEGER,
+            title TEXT,
             background_type TEXT,
             characters TEXT,
             narration TEXT,
@@ -60,6 +61,12 @@ def init_db():
             FOREIGN KEY (story_id) REFERENCES stories(id)
         )
     ''')
+    
+    # Add title column if it doesn't exist (migration for existing databases)
+    cursor.execute("PRAGMA table_info(scenes)")
+    columns = [column[1] for column in cursor.fetchall()]
+    if 'title' not in columns:
+        cursor.execute('ALTER TABLE scenes ADD COLUMN title TEXT')
     
     # Characters table
     cursor.execute('''

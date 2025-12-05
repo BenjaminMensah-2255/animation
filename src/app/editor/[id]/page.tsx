@@ -77,19 +77,25 @@ export default function Editor({ params }: { params: Promise<{ id: string }> }) 
               {tab === 'story' && <StoryCreator projectId={projectId} onStoryCreated={loadProject} />}
               {tab === 'scenes' && (
                 <div className="space-y-4">
-                  {project.scenes?.map((scene: any) => (
-                    <div
-                      key={scene.id}
-                      onClick={() => {
-                        setActiveScene(scene);
-                        setTab('edit');
-                      }}
-                      className="p-4 border rounded hover:bg-gray-50 cursor-pointer"
-                    >
-                      <h3 className="font-bold">Scene {scene.sequence}</h3>
-                      <p className="text-sm text-gray-600">{scene.background}</p>
-                    </div>
-                  ))}
+                  {project.scenes && project.scenes.length > 0 ? (
+                    project.scenes.map((scene: any) => (
+                      <div
+                        key={scene.id}
+                        onClick={() => {
+                          setActiveScene(scene);
+                          setTab('edit');
+                        }}
+                        className="p-4 border rounded hover:bg-gray-50 cursor-pointer transition"
+                      >
+                        <h3 className="font-bold">Scene {scene.sequence}: {scene.title || 'Untitled'}</h3>
+                        <p className="text-sm text-gray-600 mt-2"><strong>Background:</strong> {scene.background}</p>
+                        <p className="text-sm text-gray-700 mt-2"><strong>Narration:</strong> {scene.narration?.substring(0, 100)}...</p>
+                        <div className="text-xs text-blue-600 mt-2">📻 Audio ready - Click to edit</div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">No scenes yet. Create a story first in the Story tab.</p>
+                  )}
                 </div>
               )}
               {tab === 'edit' && activeScene && <SceneEditor scene={activeScene} projectId={projectId} onSceneDeleted={() => { loadProject(); setTab('scenes'); }} />}
