@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Play } from 'lucide-react';
 
 export default function ProjectsList() {
   const [projects, setProjects] = useState<any[]>([]);
@@ -76,6 +76,13 @@ export default function ProjectsList() {
                     className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 flex items-center justify-center gap-2"
                   >
                     <Edit2 size={16} /> Edit
+                  </Link>
+                  <Link
+                    href={`/viewer`}
+                    className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 flex items-center justify-center gap-2"
+                    title="View animation"
+                  >
+                    <Play size={16} /> View
                   </Link>
                   <button
                     onClick={() => handleDelete(project.id)}

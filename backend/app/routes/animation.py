@@ -22,7 +22,7 @@ def preview_scene(scene_id):
     if not result:
         return jsonify({'error': 'Scene not found'}), 404
     
-    scene_id_db, project_id, story_id, sequence, background_type, characters, narration, duration, transitions, created_at = result
+    scene_id_db, project_id, story_id, sequence, title, background_type, characters, narration, duration, transitions, created_at = result
     
     # Parse characters data
     try:
