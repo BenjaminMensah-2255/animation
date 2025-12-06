@@ -37,12 +37,63 @@ def preview_scene(scene_id):
     # Render frame
     scene = {
         'background_type': background_type or 'forest',
-        'characters': characters_data
+        'characters': characters_data,
+        'narration': narration or ''
     }
     
     svg = AnimationEngine.render_scene_frame(scene, char_map, 0)
     
     return svg, 200, {'Content-Type': 'image/svg+xml'}
+
+@animation_bp.route('/audio/<scene_id>', methods=['GET'])
+def get_scene_audio(scene_id):
+    """Get audio file URL for a scene"""
+    from app.services.audio_service import AudioService
+    import os
+    
+    result = query_db(
+        'SELECT id, narration, duration FROM scenes WHERE id = ?',
+        (scene_id,),
+        one=True
+    )
+    
+    if not result:
+        return jsonify({'error': 'Scene not found'}), 404
+    
+    scene_id_db, narration, duration = result
+    
+    if not narration:
+        return jsonify({'error': 'No narration for this scene'}), 404
+    
+    # Generate audio file if it doesn't exist
+    audio_filename = f"{scene_id}.wav"
+    audio_filepath = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'storage', 'audio', audio_filename)
+    
+    if not os.path.exists(audio_filepath):
+        try:
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(audio_filepath), exist_ok=True)
+            # Generate narration audio
+            result = AudioService.generate_narration(narration, audio_filename)
+            if not result.get('success'):
+                return jsonify({'error': 'Failed to generate audio'}), 500
+        except Exception as e:
+            print(f"Error generating audio: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    # Return the audio file
+    try:
+        return send_file(
+            audio_filepath,
+            mimetype='audio/wav',
+            as_attachment=False,
+            download_name=audio_filename
+        )
+    except Exception as e:
+        print(f"Error sending audio file: {e}")
+        return jsonify({'error': 'Failed to send audio file'}), 500
+
+@animation_bp.route('/preview/<scene_id>', methods=['GET'])
 
 @animation_bp.route('/scenes/<scene_id>/update', methods=['POST'])
 def update_scene(scene_id):

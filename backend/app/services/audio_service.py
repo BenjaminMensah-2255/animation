@@ -21,8 +21,10 @@ class AudioService:
         
         filename = f"narration_{scene_id if scene_id else uuid.uuid4()}.wav"
         
-        filepath = os.path.join(os.getcwd(), 'storage', 'audio', filename)
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        # Use correct path relative to project root
+        storage_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'storage', 'audio')
+        filepath = os.path.join(storage_dir, filename)
+        os.makedirs(storage_dir, exist_ok=True)
         
         try:
             engine.save_to_file(text, filepath)
@@ -57,8 +59,10 @@ class AudioService:
         if filename is None:
             filename = f"narration_{uuid.uuid4()}.wav"
         
-        filepath = f"storage/audio/{filename}"
-        os.makedirs('storage/audio', exist_ok=True)
+        # Use correct path relative to project root
+        storage_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'storage', 'audio')
+        filepath = os.path.join(storage_dir, filename)
+        os.makedirs(storage_dir, exist_ok=True)
         
         try:
             engine.save_to_file(text, filepath)

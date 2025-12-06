@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { Play, Pause, SkipBack, SkipForward, Download, Home, Volume2, VolumeX } from 'lucide-react';
 
 export default function ViewerPage() {
   const router = useRouter();
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [scenes, setScenes] = useState<any[]>([]);
@@ -85,6 +86,11 @@ export default function ViewerPage() {
 
   const handleProjectSelect = (project: any) => {
     setSelectedProject(project);
+    setIsPlaying(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
     loadScenes(project.id);
   };
 
@@ -92,6 +98,11 @@ export default function ViewerPage() {
     if (currentSceneIndex > 0) {
       setCurrentSceneIndex(currentSceneIndex - 1);
       setFrameIndex(0);
+      setIsPlaying(false);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
       loadScenePreview(scenes[currentSceneIndex - 1].id);
     }
   };
@@ -100,7 +111,26 @@ export default function ViewerPage() {
     if (currentSceneIndex < scenes.length - 1) {
       setCurrentSceneIndex(currentSceneIndex + 1);
       setFrameIndex(0);
+      setIsPlaying(false);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
       loadScenePreview(scenes[currentSceneIndex + 1].id);
+    }
+  };
+
+  const handlePlayPause = () => {
+    if (isPlaying) {
+      setIsPlaying(false);
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    } else {
+      setIsPlaying(true);
+      if (audioRef.current && scenes[currentSceneIndex]?.narration) {
+        audioRef.current.play().catch(err => console.error('Audio play error:', err));
+      }
     }
   };
 
@@ -119,8 +149,26 @@ export default function ViewerPage() {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
 
+  const currentScene = scenes[currentSceneIndex];
+  const audioUrl = currentScene ? `http://localhost:5000/api/animations/audio/${currentScene.id}` : '';
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
+      {/* Hidden audio element */}
+      {audioUrl && (
+        <audio
+          ref={audioRef}
+          src={audioUrl}
+          onEnded={() => {
+            if (currentSceneIndex < scenes.length - 1) {
+              handleNextScene();
+            } else {
+              setIsPlaying(false);
+            }
+          }}
+        />
+      )}
+
       {/* Header */}
       <div className="bg-black border-b border-gray-700 p-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
@@ -220,7 +268,7 @@ export default function ViewerPage() {
               </button>
 
               <button
-                onClick={() => setIsPlaying(!isPlaying)}
+                onClick={handlePlayPause}
                 className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded flex items-center gap-2 transition"
               >
                 {isPlaying ? <Pause size={16} /> : <Play size={16} />}

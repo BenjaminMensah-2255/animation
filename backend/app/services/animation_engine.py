@@ -2,108 +2,148 @@ import json
 import math
 from typing import Dict, List, Tuple
 
+class MouthShapes:
+    """Mouth shapes for speech animation (visemes)"""
+    SHAPES = {
+        'rest': 'M -10 -18 L 10 -18',  # Neutral closed mouth
+        'open': 'M -10 -18 Q 0 -12 10 -18',  # Open mouth (A, O)
+        'smile': 'M -12 -18 Q 0 -12 12 -18',  # Smile
+        'narrow': 'M -8 -18 L 8 -18',  # Narrow (E, I)
+        'wide': 'M -14 -18 Q 0 -14 14 -18',  # Wide
+        'oh': 'M -6 -18 L -6 -12 Q -6 -8 0 -8 Q 6 -8 6 -12 L 6 -18',  # O shape
+        'teeth': 'M -10 -18 Q 0 -15 10 -18 M -8 -18 L -8 -16 M 0 -18 L 0 -16 M 8 -18 L 8 -16',  # Showing teeth
+    }
+    
+    @staticmethod
+    def get_mouth_for_phoneme(phoneme: str) -> str:
+        """Get mouth shape based on phoneme"""
+        phoneme_map = {
+            'p': 'oh', 'b': 'oh', 'm': 'oh',  # Bilabial
+            'a': 'open', 'o': 'oh',  # Vowels
+            'e': 'narrow', 'i': 'narrow',  # Front vowels
+            'u': 'oh', 'oo': 'oh',  # Back vowels
+            'f': 'narrow', 'v': 'narrow',  # Fricatives
+            'th': 'teeth', 't': 'narrow', 'd': 'narrow', 'n': 'narrow',  # Dentals
+            'rest': 'rest'
+        }
+        return MouthShapes.SHAPES.get(phoneme_map.get(phoneme, 'rest'), MouthShapes.SHAPES['rest'])
+
 class AnimationEngine:
     """Generate SVG animations and frame sequences"""
     
     FRAME_RATE = 30  # FPS for animation
     
     @staticmethod
-    def create_character_svg(character: dict, position: dict, expression: str = 'neutral') -> str:
-        """Create an SVG representation of a character with improved visuals"""
+    def create_character_svg(character: dict, position: dict, expression: str = 'neutral', mouth_shape: str = 'rest', is_speaking: bool = False) -> str:
+        """Create an SVG representation of a character with animated mouth"""
         x = position.get('x', 0.5) * 1280  # Assume 1280px width
         y = position.get('y', 0.7) * 720   # Assume 720px height
         
         color = character.get('color', '#FF6B6B')
         name = character.get('name', 'Character')
         
-        # Enhanced character with better proportions
+        # Get mouth path based on shape
+        mouth_path = MouthShapes.SHAPES.get(mouth_shape, MouthShapes.SHAPES['rest'])
+        
+        # Enhanced character with better proportions and animated mouth
         svg = f'''
         <g id="character-{name}" transform="translate({x}, {y})">
-            <!-- Shadow -->
-            <ellipse cx="0" cy="70" rx="30" ry="8" fill="rgba(0,0,0,0.2)"/>
+            <!-- Shadow (subtle) -->
+            <ellipse cx="0" cy="72" rx="32" ry="8" fill="rgba(0,0,0,0.15)"/>
             
-            <!-- Head -->
-            <circle cx="0" cy="-30" r="28" fill="{color}" stroke="black" stroke-width="2.5"/>
+            <!-- Head (larger, more rounded) -->
+            <circle cx="0" cy="-32" r="32" fill="{color}" stroke="#333" stroke-width="2.5"/>
             
-            <!-- Hair/Top -->
-            <path d="M -28 -35 Q -35 -50 -20 -58 Q 0 -65 20 -58 Q 35 -50 28 -35" fill="{color}" stroke="black" stroke-width="2"/>
+            <!-- Hair/Top (more stylized) -->
+            <path d="M -32 -38 Q -40 -55 -20 -64 Q 0 -72 20 -64 Q 40 -55 32 -38 Q 35 -45 20 -50 Q 0 -55 -20 -50 Q -35 -45 -32 -38" fill="{color}" stroke="#333" stroke-width="2"/>
             
-            <!-- Eyes -->
-            <circle cx="-12" cy="-35" r="5" fill="white" stroke="black" stroke-width="1.5"/>
-            <circle cx="12" cy="-35" r="5" fill="white" stroke="black" stroke-width="1.5"/>
-            <circle cx="-10" cy="-34" r="3" fill="black"/>
-            <circle cx="14" cy="-34" r="3" fill="black"/>
+            <!-- Cheeks (subtle blush) -->
+            <circle cx="-18" cy="-25" r="8" fill="{color}" opacity="0.6"/>
+            <circle cx="18" cy="-25" r="8" fill="{color}" opacity="0.6"/>
+            
+            <!-- Eyes (larger, more expressive) -->
+            <circle cx="-14" cy="-38" r="6" fill="white" stroke="#333" stroke-width="2"/>
+            <circle cx="14" cy="-38" r="6" fill="white" stroke="#333" stroke-width="2"/>
+            <circle cx="-12" cy="-37" r="3.5" fill="black"/>
+            <circle cx="16" cy="-37" r="3.5" fill="black"/>
+            
+            <!-- Eyebrows (expressive) -->
+            <path d="M -18 -48 Q -14 -51 -10 -48" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M 10 -48 Q 14 -51 18 -48" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
+            
+            <!-- Nose -->
+            <line x1="0" y1="-32" x2="0" y2="-20" stroke="#333" stroke-width="1.5"/>
+            <circle cx="-2" cy="-18" r="2" fill="#333"/>
+            <circle cx="2" cy="-18" r="2" fill="#333"/>
         '''
         
         # Add expression-based features
         if expression == 'happy':
             svg += '''
             <!-- Happy eyes (closed happy) -->
-            <path d="M -18 -32 Q -12 -28 -6 -32" stroke="black" stroke-width="2" fill="none"/>
-            <path d="M 6 -32 Q 12 -28 18 -32" stroke="black" stroke-width="2" fill="none"/>
-            <!-- Happy mouth (curved smile) -->
-            <path d="M -12 -18 Q 0 -12 12 -18" stroke="black" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <path d="M -20 -36 Q -14 -31 -8 -36" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <path d="M 8 -36 Q 14 -31 20 -36" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>
             '''
         elif expression == 'sad':
             svg += '''
             <!-- Sad eyes -->
-            <path d="M -18 -30 L -6 -34" stroke="black" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <path d="M 6 -30 L 18 -34" stroke="black" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <!-- Sad mouth (downward curve) -->
-            <path d="M -12 -14 Q 0 -20 12 -14" stroke="black" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <path d="M -20 -35 L -8 -40" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M 8 -35 L 20 -40" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
             <!-- Tears -->
-            <circle cx="-12" cy="-25" r="2" fill="#87CEEB"/>
-            <circle cx="12" cy="-25" r="2" fill="#87CEEB"/>
+            <circle cx="-14" cy="-28" r="2.5" fill="#87CEEB"/>
+            <circle cx="14" cy="-28" r="2.5" fill="#87CEEB"/>
             '''
         elif expression == 'surprised':
             svg += '''
             <!-- Surprised eyes (wide open) -->
-            <circle cx="-12" cy="-35" r="7" fill="white" stroke="black" stroke-width="2"/>
-            <circle cx="12" cy="-35" r="7" fill="white" stroke="black" stroke-width="2"/>
-            <circle cx="-12" cy="-34" r="4" fill="black"/>
-            <circle cx="12" cy="-34" r="4" fill="black"/>
-            <!-- Surprised mouth (O shape) -->
-            <circle cx="0" cy="-18" r="6" fill="none" stroke="black" stroke-width="2.5"/>
+            <circle cx="-14" cy="-38" r="8" fill="white" stroke="#333" stroke-width="2"/>
+            <circle cx="14" cy="-38" r="8" fill="white" stroke="#333" stroke-width="2"/>
+            <circle cx="-12" cy="-37" r="4" fill="black"/>
+            <circle cx="16" cy="-37" r="4" fill="black"/>
             '''
         elif expression == 'angry':
             svg += '''
-            <!-- Angry eyes -->
-            <path d="M -18 -32 L -6 -38" stroke="black" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-            <path d="M 6 -38 L 18 -32" stroke="black" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-            <!-- Angry mouth (straight line) -->
-            <line x1="-12" y1="-15" x2="12" y2="-15" stroke="black" stroke-width="2.5" stroke-linecap="round"/>
-            <!-- Angry eyebrows/marks -->
-            <line x1="-15" y1="-42" x2="-8" y2="-40" stroke="black" stroke-width="2"/>
-            <line x1="15" y1="-42" x2="8" y2="-40" stroke="black" stroke-width="2"/>
-            '''
-        else:  # neutral
-            svg += '''
-            <!-- Neutral mouth -->
-            <line x1="-10" y1="-18" x2="10" y2="-18" stroke="black" stroke-width="2" stroke-linecap="round"/>
+            <!-- Angry eyebrows -->
+            <path d="M -18 -48 Q -14 -54 -10 -48" stroke="#333" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <path d="M 10 -48 Q 14 -54 18 -48" stroke="#333" stroke-width="3" fill="none" stroke-linecap="round"/>
             '''
         
+        # Add animated mouth
         svg += f'''
-            <!-- Body -->
-            <rect x="-18" y="0" width="36" height="45" fill="{color}" stroke="black" stroke-width="2.5" rx="8"/>
+            <!-- Mouth (animated) -->
+            <path d="{mouth_path}" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <!-- Mouth fill for open states -->
+            {"<ellipse cx=\"0\" cy=\"-15\" rx=\"8\" ry=\"5\" fill=\"#DD6B6B\" opacity=\"0.6\"/>" if mouth_shape in ['open', 'oh', 'wide'] else ""}
             
-            <!-- Shirt/Details -->
-            <rect x="-16" y="2" width="32" height="12" fill="{color}" opacity="0.8" stroke="black" stroke-width="1.5"/>
+            <!-- Body (more defined) -->
+            <rect x="-20" y="5" width="40" height="50" fill="{color}" stroke="#333" stroke-width="2.5" rx="10"/>
             
-            <!-- Arms -->
-            <line x1="-18" y1="12" x2="-42" y2="18" stroke="{color}" stroke-width="4" stroke-linecap="round"/>
-            <line x1="18" y1="12" x2="42" y2="18" stroke="{color}" stroke-width="4" stroke-linecap="round"/>
+            <!-- Shirt/Details (pattern) -->
+            <rect x="-18" y="8" width="36" height="14" fill="#333" opacity="0.2" rx="4"/>
+            <circle cx="-8" cy="15" r="2" fill="#FFD700"/>
+            <circle cx="8" cy="15" r="2" fill="#FFD700"/>
             
-            <!-- Hands -->
-            <circle cx="-42" cy="18" r="6" fill="{color}" stroke="black" stroke-width="2"/>
-            <circle cx="42" cy="18" r="6" fill="{color}" stroke="black" stroke-width="2"/>
+            <!-- Arms (rounded) -->
+            <line x1="-20" y1="15" x2="-48" y2="22" stroke="{color}" stroke-width="5" stroke-linecap="round"/>
+            <line x1="20" y1="15" x2="48" y2="22" stroke="{color}" stroke-width="5" stroke-linecap="round"/>
+            
+            <!-- Hands (with fingers suggested) -->
+            <circle cx="-48" cy="22" r="7" fill="{color}" stroke="#333" stroke-width="2"/>
+            <circle cx="48" cy="22" r="7" fill="{color}" stroke="#333" stroke-width="2"/>
             
             <!-- Legs -->
-            <line x1="-10" y1="45" x2="-10" y2="65" stroke="{color}" stroke-width="4" stroke-linecap="round"/>
-            <line x1="10" y1="45" x2="10" y2="65" stroke="{color}" stroke-width="4" stroke-linecap="round"/>
+            <line x1="-10" y1="55" x2="-10" y2="72" stroke="{color}" stroke-width="5" stroke-linecap="round"/>
+            <line x1="10" y1="55" x2="10" y2="72" stroke="{color}" stroke-width="5" stroke-linecap="round"/>
             
-            <!-- Shoes -->
-            <ellipse cx="-10" cy="68" rx="8" ry="5" fill="black" stroke="black" stroke-width="1.5"/>
-            <ellipse cx="10" cy="68" rx="8" ry="5" fill="black" stroke="black" stroke-width="1.5"/>
+            <!-- Shoes (stylized) -->
+            <ellipse cx="-10" cy="75" rx="10" ry="6" fill="#333" stroke="#222" stroke-width="1.5"/>
+            <ellipse cx="10" cy="75" rx="10" ry="6" fill="#333" stroke="#222" stroke-width="1.5"/>
+            <line x1="-14" y1="75" x2="-6" y2="75" stroke="#FFD700" stroke-width="1" opacity="0.6"/>
+            <line x1="6" y1="75" x2="14" y2="75" stroke="#FFD700" stroke-width="1" opacity="0.6"/>
+            
+            <!-- Speaking indicator (optional glow) -->
+            {"<circle cx=\"0\" cy=\"-32\" r=\"35\" fill=\"none\" stroke=\"#FFD700\" stroke-width=\"1.5\" opacity=\"0.4\" stroke-dasharray=\"5,5\">" if is_speaking else ""}
+            {"</circle>" if is_speaking else ""}
         </g>
         '''
         
@@ -306,7 +346,7 @@ class AnimationEngine:
             '''
         }
         
-        return f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">{backgrounds.get(background_type, backgrounds["forest"])}</svg>'
+        return f'{backgrounds.get(background_type, backgrounds["forest"])}'
     
     @staticmethod
     def generate_keyframes(animation_type: str, duration: float, start_pos: dict, end_pos: dict = None) -> List[dict]:
@@ -367,20 +407,113 @@ class AnimationEngine:
     
     @staticmethod
     def render_scene_frame(scene: dict, characters: dict, frame_num: int, width: int = 1280, height: int = 720) -> str:
-        """Render a single frame of a scene as SVG"""
+        """Render a single frame of a scene as SVG with dialogue and animated mouths"""
         svg = f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
         
         # Add background
         svg += AnimationEngine.create_background_svg(scene.get('background_type', 'forest'), width, height)
         
+        # Get narration and determine speaking character
+        narration = scene.get('narration', '')
+        is_speaking_frame = frame_num > 0  # Character speaks for most of scene
+        
         # Add characters with animations applied
-        for char_data in scene.get('characters', []):
-            char_id = char_data.get('character_id')
-            character = characters.get(char_id, {})
-            position = char_data.get('position', {'x': 0.5, 'y': 0.7})
-            expression = char_data.get('expression', 'neutral')
+        scene_characters = scene.get('characters', [])
+        if isinstance(scene_characters, str):
+            try:
+                scene_characters = json.loads(scene_characters)
+            except:
+                scene_characters = []
+        
+        for idx, char_ref in enumerate(scene_characters):
+            # Handle both character ID strings and full character data objects
+            if isinstance(char_ref, str):
+                char_id = char_ref
+                character = characters.get(char_id, {})
+                if 'name' not in character:
+                    character['name'] = char_id
+                if 'color' not in character:
+                    character['color'] = '#FF6B6B'
+                # Position characters side by side
+                position = {'x': 0.3 + (idx * 0.2), 'y': 0.65}
+                expression = 'neutral'
+            else:
+                char_id = char_ref.get('character_id', str(idx))
+                character = characters.get(char_id, {})
+                if 'name' not in character:
+                    character['name'] = char_ref.get('name', char_id)
+                if 'color' not in character:
+                    character['color'] = char_ref.get('color', '#FF6B6B')
+                position = char_ref.get('position', {'x': 0.3 + (idx * 0.2), 'y': 0.65})
+                expression = char_ref.get('expression', 'neutral')
             
-            svg += AnimationEngine.create_character_svg(character, position, expression)
+            # Determine mouth shape based on narration and frame
+            mouth_shape = 'rest'
+            if is_speaking_frame and narration:
+                # Animate mouth based on narration text and frame
+                phoneme_index = (frame_num // 3) % len(narration)
+                mouth_shape = MouthShapes.get_mouth_for_phoneme(narration[phoneme_index].lower())
+            
+            svg += AnimationEngine.create_character_svg(character, position, expression, mouth_shape, is_speaking_frame)
+            
+            # Add speech bubble with narration (first character speaks)
+            if idx == 0 and narration:
+                svg += AnimationEngine.create_speech_bubble(narration, position, character.get('color', '#FF6B6B'))
         
         svg += '</svg>'
         return svg
+    
+    @staticmethod
+    def create_speech_bubble(text: str, position: dict, character_color: str, max_width: int = 200) -> str:
+        """Create a speech bubble with text"""
+        # Calculate position
+        bubble_x = position.get('x', 0.5) * 1280 - 100
+        bubble_y = position.get('y', 0.7) * 720 - 180
+        
+        # Word wrapping
+        words = text.split()
+        lines = []
+        current_line = []
+        
+        for word in words:
+            current_line.append(word)
+            if len(' '.join(current_line)) > 25:
+                lines.append(' '.join(current_line[:-1]))
+                current_line = [word]
+        if current_line:
+            lines.append(' '.join(current_line))
+        
+        # Limit to 3 lines
+        lines = lines[:3]
+        text_to_display = '\n'.join(lines)
+        
+        # Speech bubble dimensions
+        bubble_width = 200
+        bubble_height = 30 + (len(lines) * 18)
+        
+        svg = f'''
+        <!-- Speech Bubble -->
+        <g id="speech-bubble">
+            <!-- Bubble background (rounded rectangle) -->
+            <rect x="{bubble_x}" y="{bubble_y}" width="{bubble_width}" height="{bubble_height}" 
+                  rx="12" ry="12" fill="white" stroke="#333" stroke-width="2" opacity="0.95"/>
+            
+            <!-- Pointer tail -->
+            <polygon points="{bubble_x + 20},{bubble_y + bubble_height} {bubble_x + 40},{bubble_y + bubble_height + 15} {bubble_x + 50},{bubble_y + bubble_height}" 
+                     fill="white" stroke="#333" stroke-width="2"/>
+            
+            <!-- Text (with line breaks) -->
+        '''
+        
+        # Add text lines
+        for i, line in enumerate(lines):
+            text_y = bubble_y + 22 + (i * 18)
+            # Escape XML special characters
+            line = line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            svg += f'<text x="{bubble_x + 10}" y="{text_y}" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#333">{line}</text>\n'
+        
+        svg += '''
+        </g>
+        '''
+        return svg
+
