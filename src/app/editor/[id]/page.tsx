@@ -13,6 +13,7 @@ export default function Editor({ params }: { params: Promise<{ id: string }> }) 
   const [activeScene, setActiveScene] = useState<any>(null);
   const [tab, setTab] = useState<'story' | 'scenes' | 'edit'>('story');
   const [loading, setLoading] = useState(true);
+  const [generatedStory, setGeneratedStory] = useState<any>(null);
 
   useEffect(() => {
     loadProject();
@@ -74,7 +75,7 @@ export default function Editor({ params }: { params: Promise<{ id: string }> }) 
                 </button>
               </div>
 
-              {tab === 'story' && <StoryCreator projectId={projectId} onStoryCreated={loadProject} />}
+              {tab === 'story' && <StoryCreator projectId={projectId} onStoryCreated={loadProject} generatedStory={generatedStory} onStoryGenerated={setGeneratedStory} />}
               {tab === 'scenes' && (
                 <div className="space-y-4">
                   {project.scenes && project.scenes.length > 0 ? (

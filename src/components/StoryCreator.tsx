@@ -1,15 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Wand2, Play, Pause, Download } from 'lucide-react';
 
-export default function StoryCreator({ projectId, onStoryCreated }: { projectId: string; onStoryCreated?: () => void }) {
+export default function StoryCreator({ projectId, onStoryCreated, generatedStory, onStoryGenerated }: { projectId: string; onStoryCreated?: () => void; generatedStory?: any; onStoryGenerated?: (story: any) => void }) {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
-  const [story, setStory] = useState<any>(null);
+  const [story, setStory] = useState<any>(generatedStory || null);
   const [playingAudio, setPlayingAudio] = useState<{[key: string]: boolean}>({});
   const [audioPlayer, setAudioPlayer] = useState<{[key: string]: HTMLAudioElement}>({});
+
+  // Sync parent story state when it changes
+  useEffect(() => {
+    if (generatedStory) {
+      setStory(generatedStory);
+    }
+  }, [generatedStory]);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,6 +25,10 @@ export default function StoryCreator({ projectId, onStoryCreated }: { projectId:
     try {
       const result = await api.createStory(projectId, prompt);
       setStory(result);
+      // Persist story to parent state
+      if (onStoryGenerated) {
+        onStoryGenerated(result);
+      }
       // Callback to refresh project data
       if (onStoryCreated) {
         onStoryCreated();
