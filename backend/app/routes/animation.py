@@ -22,7 +22,7 @@ def preview_scene(scene_id):
     if not result:
         return jsonify({'error': 'Scene not found'}), 404
     
-    scene_id_db, project_id, story_id, sequence, background_type, characters, narration, duration, transitions, created_at = result
+    scene_id_db, project_id, story_id, sequence, title, background_type, characters, narration, duration, transitions, created_at = result
     
     # Parse characters data
     try:
@@ -60,8 +60,8 @@ def update_scene(scene_id):
         return jsonify({'error': 'Scene not found'}), 404
     
     characters = json.dumps(data.get('characters', []))
-    background_type = data.get('background_type', result[4])
-    narration = data.get('narration', result[7])
+    background_type = data.get('background_type', result[5])
+    narration = data.get('narration', result[8])
     
     execute_db(
         '''UPDATE scenes SET characters = ?, background_type = ?, narration = ?
@@ -120,7 +120,7 @@ def render_animation():
     char_defs = StoryGenerator.get_available_characters()
     
     for scene_row in results:
-        scene_id, _, _, sequence, background_type, characters, narration, duration, transitions, created_at = scene_row
+        scene_id, _, _, sequence, _, background_type, characters, narration, duration, transitions, created_at = scene_row
         
         try:
             characters_data = json.loads(characters) if characters else []
