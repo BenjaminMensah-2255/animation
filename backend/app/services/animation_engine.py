@@ -140,10 +140,6 @@ class AnimationEngine:
             <ellipse cx="10" cy="75" rx="10" ry="6" fill="#333" stroke="#222" stroke-width="1.5"/>
             <line x1="-14" y1="75" x2="-6" y2="75" stroke="#FFD700" stroke-width="1" opacity="0.6"/>
             <line x1="6" y1="75" x2="14" y2="75" stroke="#FFD700" stroke-width="1" opacity="0.6"/>
-            
-            <!-- Speaking indicator (optional glow) -->
-            {"<circle cx=\"0\" cy=\"-32\" r=\"35\" fill=\"none\" stroke=\"#FFD700\" stroke-width=\"1.5\" opacity=\"0.4\" stroke-dasharray=\"5,5\">" if is_speaking else ""}
-            {"</circle>" if is_speaking else ""}
         </g>
         '''
         
